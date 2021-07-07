@@ -2,34 +2,58 @@ require 'rest-client'
 require 'json'
 require 'pry'
 
+#returns info hash of films by character_name
 def get_character_movies_from_api(character_name)
+  
   #make the web request
-
-
-  response_string = RestClient.get('http://swapi.dev/api/people')
-  response_hash = JSON.parse(response_string)
-
-  # iterate over the response hash to find the collection of `films` for the given
-  #   `character`
-  # collect those film API urls, make a web request to each URL to get the info
-  #  for that film
-  # return value of this method should be collection of info about each film.
-  #  i.e. an array of hashes in which each hash reps a given film
-  # this collection will be the argument given to `print_movies`
-  #  and that method will do some nice presentation stuff like puts out a list
-  #  of movies by title. Have a play around with the puts with other info about a given film.
+  all_info = get_json_hash('http://swapi.dev/api/people')  
+  
+  #gets array of urls pointing to each movie  
+  film_urls = []
+  all_info["results"].each do |result|
+    if result['name'] == character_name
+      film_urls = result['films']
+    end
+  end  
+  #retrieves movie hash from each film_url(s)
+  film_urls.map do |url|
+    get_json_hash(url)
+  end  
 end
 
+
+
+#numbers and prints title of each json hash
 def print_movies(films)
-  # some iteration magic and puts out the movies in a nice list
+  films.each_with_index do |film, index|
+    puts "#{index+1}. #{film["title"]}"
+  end
 end
 
+#helper
 def show_character_movies(character)
   films = get_character_movies_from_api(character)
   print_movies(films)
 end
 
-## BONUS
+#returns array of [results] from json hash
+def get_json_hash(api_link)
+  response_string = RestClient.get(api_link)
+  response_hash = JSON.parse(response_string)   
+end
 
-# that `get_character_movies_from_api` method is probably pretty long. Does it do more than one job?
-# can you split it up into helper methods?
+def show_movie_info(movie,hash_key)
+  if hash_key == '-all'
+    all_info = get_json_hash("https://swapi.dev/api/films")
+    all_info['results'].each do |movie_hash|
+      if movie_hash['title'] == movie
+        movie_hash.each do |hash_val|
+          if !hash_val.is_a? Array
+            puts hash_val
+        end
+      end
+    end
+  end
+
+end
+
